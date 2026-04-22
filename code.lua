@@ -434,6 +434,7 @@ farmUI.attackButton, farmUI.attackTickBox = createFeature(rightColumn, "Auto Att
 farmUI.resetCharacterButton, farmUI.resetCharacterTickBox = createFeature(rightColumn, "Reset Character", "", 355, "Reset")
 farmUI.antiAfkButton, farmUI.antiAfkTickBox = createFeature(rightColumn, "Anti AFK", "", 430, "Anti AFK")
 farmUI.hopServerButton, farmUI.hopServerTickBox = createFeature(rightColumn, "Hop Server", "", 505, "Hop Server")
+farmUI.meditateButton, farmUI.meditateTickBox = createFeature(rightColumn, "Auto Meditate", "", 580, "Meditate")
 
 local winUI = {}
 winUI.killButton, winUI.killTickBox = createFeature(winColumn, "Auto Kill", "", 55, "Auto Kill")
@@ -483,6 +484,7 @@ local autoQueueEnabled = false
 local autoKillEnabled = false
 local autoLeaveEnabled = false
 local antiAfkEnabled = false
+local autoMeditateEnabled = false
 local autoLoadConfigEnabled = true
 local farmBusy = false
 local currentTween
@@ -499,6 +501,11 @@ local rogueResetConsumed = false
 local missionResetArmed = false
 local lastFarmRunAt = 0
 local lastFarmProgressAt = 0
+local lastFarmTarget
+local lastFarmTargetHealth = math.huge
+local lastFarmTargetProgressAt = 0
+local lastRespawnAt = 0
+local lastAutoFarmRestartAt = 0
 local selectedSlot = "A"
 local selectedBoostRole = "win"
 local lastSlotChooseAt = 0
@@ -519,6 +526,9 @@ local INVITE_OPEN_COOLDOWN = 2
 local INVITE_TARGET_COOLDOWN = 10
 local QUEUE_REQUEST_COOLDOWN = 5
 local FARM_STUCK_TIMEOUT = 6
+local FARM_TARGET_TIMEOUT = 10
+local AUTO_FARM_RESTART_COOLDOWN = 3
+local MEDITATE_REQUEST_COOLDOWN = 2
 local HOLLOW_SPAWN_PADDING = Vector3.new(100, 60, 100)
 local HOLLOW_SPAWN_RADIUS_PADDING = 140
 local PROFILE_ROOT_FOLDER = "cocacola"
@@ -570,6 +580,10 @@ end
 local function disableShiftLock()
 	pcall(function()
 		player.DevEnableMouseLock = false
+	end)
+
+	pcall(function()
+		player.CameraMode = Enum.CameraMode.Classic
 	end)
 
 	pcall(function()
@@ -1200,6 +1214,74 @@ local function enterRespawnRecovery()
 	stopCurrentTween()
 end
 
+function recoverAutoFarmStuck()
+	stopCurrentTween()
+	farmBusy = false
+
+	local character = player.Character
+	local humanoid = character and character:FindFirstChildWhichIsA("Humanoid")
+	if not humanoid or humanoid.Health <= 0 then
+		enterRespawnRecovery()
+		return
+	end
+
+	local matchedMission = findMissionAtPlayerPosition() or findMatchedMissionByPlayerTP()
+	if matchedMission then
+		currentMission = matchedMission
+		waitingForMission = false
+		markFarmProgress()
+		return
+	end
+
+	currentMission = nil
+	waitingForMission = false
+
+	if not hasVisibleMissionTitle() and tick() - missionRequestAt >= BOARD_REQUEST_COOLDOWN then
+		runAutoBoard()
+	end
+
+	markFarmProgress()
+end
+
+function restartAutoFarm()
+	if not autoFarmEnabled then
+		return
+	end
+
+	if tick() - lastAutoFarmRestartAt < AUTO_FARM_RESTART_COOLDOWN then
+		return
+	end
+
+	lastAutoFarmRestartAt = tick()
+	toggleAutoFarm()
+	task.wait(0.2)
+	toggleAutoFarm()
+end
+
+function updateAutoFarmTargetProgress(mob)
+	if not mob or not mob.Parent then
+		lastFarmTarget = nil
+		lastFarmTargetHealth = math.huge
+		lastFarmTargetProgressAt = tick()
+		return
+	end
+
+	local humanoid = mob:FindFirstChildWhichIsA("Humanoid")
+	local health = humanoid and humanoid.Health or math.huge
+
+	if lastFarmTarget ~= mob then
+		lastFarmTarget = mob
+		lastFarmTargetHealth = health
+		lastFarmTargetProgressAt = tick()
+		return
+	end
+
+	if health < lastFarmTargetHealth then
+		lastFarmTargetHealth = health
+		lastFarmTargetProgressAt = tick()
+	end
+end
+
 local function runAutoFarm()
 	if farmBusy and tick() - lastFarmRunAt > 8 then
 		farmBusy = false
@@ -1250,6 +1332,7 @@ local function runAutoFarm()
 			currentMission = nil
 			waitingForMission = false
 			missionRequestAt = 0
+			lastRespawnAt = tick()
 			markFarmProgress()
 		else
 			farmBusy = false
@@ -1275,9 +1358,10 @@ local function runAutoFarm()
 			return
 		end
 
-		local _, mobRoot, mobPosition, aliveMobCount = findNearestMobInSpawn(hollowSpawn)
+		local nearestMob, mobRoot, mobPosition, aliveMobCount = findNearestMobInSpawn(hollowSpawn)
 
 		if aliveMobCount > 0 then
+			updateAutoFarmTargetProgress(nearestMob)
 			if mobRoot then
 				markFarmProgress()
 				playTween(getHRP(), getBehindMobPosition(mobRoot), 120, mobRoot.Position)
@@ -1289,6 +1373,7 @@ local function runAutoFarm()
 				playTween(getHRP(), getSpawnFallbackPosition(hollowSpawn), 120, hollowSpawn.Position)
 			end
 		else
+			updateAutoFarmTargetProgress(nil)
 			currentMission = nil
 			waitingForMission = false
 			markFarmProgress()
@@ -1370,6 +1455,9 @@ local function toggleAutoFarm()
 	if autoFarmEnabled then
 		startShiftLockBlock()
 		markFarmProgress()
+		lastFarmTarget = nil
+		lastFarmTargetHealth = math.huge
+		lastFarmTargetProgressAt = tick()
 		task.spawn(function()
 			while autoFarmEnabled and isCurrentSession() do
 				disableShiftLock()
@@ -1377,6 +1465,18 @@ local function toggleAutoFarm()
 				if not ok then
 					farmBusy = false
 					stopCurrentTween()
+				elseif lastFarmTarget and tick() - lastFarmTargetProgressAt >= FARM_TARGET_TIMEOUT then
+					pcall(recoverAutoFarmStuck)
+				else
+					local character = player.Character
+					local humanoid = character and character:FindFirstChildWhichIsA("Humanoid")
+					if humanoid
+						and humanoid.Health > 0
+						and lastRespawnAt > 0
+						and tick() - lastRespawnAt >= 10
+						and tick() - lastFarmProgressAt >= 10 then
+						pcall(restartAutoFarm)
+					end
 				end
 				task.wait(0.15)
 			end
@@ -1944,6 +2044,59 @@ function toggleAntiAfk()
 	applyAntiAfkState()
 end
 
+lastMeditateRequestAt = 0
+
+function isMeditating()
+	local character = player.Character
+	local humanoid = character and character:FindFirstChildWhichIsA("Humanoid")
+	local animator = humanoid and humanoid:FindFirstChildOfClass("Animator")
+	local meditateAnimation = ReplicatedStorage:FindFirstChild("Assets")
+		and ReplicatedStorage.Assets:FindFirstChild("Animations")
+		and ReplicatedStorage.Assets.Animations:FindFirstChild("Meditate")
+
+	if not animator or not meditateAnimation then
+		return false
+	end
+
+	for _, track in ipairs(animator:GetPlayingAnimationTracks()) do
+		if track.Animation == meditateAnimation then
+			return true
+		end
+	end
+
+	return false
+end
+
+function runAutoMeditateLoop()
+	task.spawn(function()
+		while autoMeditateEnabled and isCurrentSession() do
+			if not isMeditating() and tick() - lastMeditateRequestAt >= MEDITATE_REQUEST_COOLDOWN then
+				local character = getCharacter()
+				local handler = character:FindFirstChild("CharacterHandler")
+				local remotes = handler and handler:FindFirstChild("Remotes")
+				local meditateRemote = remotes and remotes:FindFirstChild("Meditate")
+
+				if meditateRemote then
+					lastMeditateRequestAt = tick()
+					meditateRemote:FireServer()
+				end
+			end
+
+			task.wait(0.5)
+		end
+	end)
+end
+
+function toggleAutoMeditate()
+	autoMeditateEnabled = not autoMeditateEnabled
+	updateTickBox(farmUI.meditateTickBox, autoMeditateEnabled)
+
+	if autoMeditateEnabled then
+		lastMeditateRequestAt = 0
+		runAutoMeditateLoop()
+	end
+end
+
 function getProfileName()
 	local rawName = tostring(player.Name or "default")
 	return rawName:gsub("[\\/:*?\"<>|]", "_")
@@ -2045,6 +2198,7 @@ function saveCurrentProfile()
 		autoLeaveEnabled = autoLeaveEnabled,
 		autoKillTarget = winUI.killNameBox.Text,
 		antiAfkEnabled = antiAfkEnabled,
+		autoMeditateEnabled = autoMeditateEnabled,
 	}
 
 	writefile(getProfilePath(), HttpService:JSONEncode(payload))
@@ -2092,6 +2246,7 @@ function loadProfile()
 	setToggleState(decoded.autoKillEnabled == true, autoKillEnabled, toggleAutoKill)
 	setToggleState(decoded.autoLeaveEnabled == true, autoLeaveEnabled, toggleAutoLeave)
 	setToggleState(decoded.antiAfkEnabled == true, antiAfkEnabled, toggleAntiAfk)
+	setToggleState(decoded.autoMeditateEnabled == true, autoMeditateEnabled, toggleAutoMeditate)
 	refreshConfigInfoLabel()
 end
 
@@ -2290,6 +2445,8 @@ pcall(function()
 	farmUI.antiAfkTickBox.MouseButton1Click:Connect(toggleAntiAfk)
 	farmUI.hopServerButton.MouseButton1Click:Connect(hopServer)
 	farmUI.hopServerTickBox.MouseButton1Click:Connect(hopServer)
+	farmUI.meditateButton.MouseButton1Click:Connect(toggleAutoMeditate)
+	farmUI.meditateTickBox.MouseButton1Click:Connect(toggleAutoMeditate)
 
 	configUI.saveButton.MouseButton1Click:Connect(createConfigProfile)
 	configUI.loadButton.MouseButton1Click:Connect(loadProfile)
@@ -2316,6 +2473,7 @@ pcall(function()
 	updateTickBox(winUI.killTickBox, autoKillEnabled)
 	updateTickBox(loseUI.leaveTickBox, autoLeaveEnabled)
 	updateTickBox(farmUI.antiAfkTickBox, antiAfkEnabled)
+	updateTickBox(farmUI.meditateTickBox, autoMeditateEnabled)
 	updateTickBox(configUI.autoLoadTickBox, autoLoadConfigEnabled)
 	refreshSelectedRoleLabel()
 	farmUI.resetCharacterTickBox.Text = "USE"
@@ -2390,6 +2548,7 @@ player.CharacterAdded:Connect(function(character)
 
 	local humanoid = character:FindFirstChildWhichIsA("Humanoid") or character:WaitForChild("Humanoid", 5)
 	if humanoid and humanoid.Health > 0 then
+		lastRespawnAt = tick()
 		markFarmProgress()
 	end
 end)
