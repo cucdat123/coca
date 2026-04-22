@@ -528,6 +528,7 @@ local QUEUE_REQUEST_COOLDOWN = 5
 local FARM_STUCK_TIMEOUT = 6
 local FARM_TARGET_TIMEOUT = 10
 local AUTO_FARM_RESTART_COOLDOWN = 3
+local AUTO_FARM_HARD_RESTART_TIMEOUT = 15
 local MEDITATE_REQUEST_COOLDOWN = 2
 local MEDITATE_SAFE_SPOT = Vector3.new(932, 152, 2244)
 local HOLLOW_SPAWN_PADDING = Vector3.new(100, 60, 100)
@@ -1468,6 +1469,8 @@ local function toggleAutoFarm()
 					stopCurrentTween()
 				elseif lastFarmTarget and tick() - lastFarmTargetProgressAt >= FARM_TARGET_TIMEOUT then
 					pcall(recoverAutoFarmStuck)
+				elseif tick() - lastFarmProgressAt >= AUTO_FARM_HARD_RESTART_TIMEOUT then
+					pcall(restartAutoFarm)
 				else
 					local character = player.Character
 					local humanoid = character and character:FindFirstChildWhichIsA("Humanoid")
@@ -2069,6 +2072,14 @@ function isMeditating()
 	return false
 end
 
+function isGrade2()
+	local skillTree = playerGui:FindFirstChild("SkillTree")
+	local mainFrame = skillTree and skillTree:FindFirstChild("MainFrame")
+	local rankLabel = mainFrame and mainFrame:FindFirstChild("playerNameRank")
+
+	return rankLabel and rankLabel:IsA("TextLabel") and rankLabel.Text == "Grade 2" or false
+end
+
 function getInnerWorldRegion()
 	local innerWorldPlots = Workspace:FindFirstChild("InnerWorldPlots")
 	local character = player.Character
@@ -2195,7 +2206,9 @@ end
 function runAutoMeditateLoop()
 	task.spawn(function()
 		while autoMeditateEnabled and isCurrentSession() do
-			if isInInnerWorld() then
+			if not isGrade2() then
+				task.wait(0.5)
+			elseif isInInnerWorld() then
 				local npc, root = findNearestShikaiNpc()
 				local humanoid = npc and npc:FindFirstChildWhichIsA("Humanoid")
 
