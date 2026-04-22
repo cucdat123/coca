@@ -10,7 +10,6 @@ local ContextActionService = game:GetService("ContextActionService")
 local StarterPlayer = game:GetService("StarterPlayer")
 local GuiService = game:GetService("GuiService")
 local VirtualInputManager = game:GetService("VirtualInputManager")
-local CoreGui = game:GetService("CoreGui")
 local VirtualUser = game:GetService("VirtualUser")
 
 if not RunService:IsClient() then
@@ -28,6 +27,11 @@ end
 local player = Players.LocalPlayer
 local playerGui = player:WaitForChild("PlayerGui")
 local guiParent = playerGui
+
+local existingGui = playerGui:FindFirstChild("cocacola")
+if existingGui then
+	existingGui:Destroy()
+end
 
 local theme = {
 	bg = Color3.fromRGB(10, 10, 14),
@@ -237,18 +241,33 @@ local function createInput(parent, placeholder, y)
 	return box
 end
 
-local chooseSlotButton, chooseSlotTickBox = createFeature(leftColumn, "Auto Choose Slot", "", 55, "Slot: A")
-local inviteButton, inviteTickBox = createFeature(leftColumn, "Auto Invite", "", 130, "Targets")
-local inviteNamesBox = createInput(leftColumn, "name1,name2", 188)
-local acceptInviteButton, acceptInviteTickBox = createFeature(leftColumn, "Auto Accept Invite", "", 235, "Accept From")
-local acceptInviteNamesBox = createInput(leftColumn, "name1,name2", 293)
+make("TextLabel", {
+	Parent = leftColumn,
+	BackgroundTransparency = 1,
+	Position = UDim2.new(0, 14, 0, 55),
+	Size = UDim2.new(0, 260, 0, 18),
+	Font = Enum.Font.Code,
+	Text = "Config Role",
+	TextColor3 = theme.text,
+	TextSize = 15,
+	TextXAlignment = Enum.TextXAlignment.Left,
+})
 
-local farmButton, farmTickBox = createFeature(rightColumn, "Auto Farm", "", 55, "Auto Farm")
-local weaponButton, weaponTickBox = createFeature(rightColumn, "Auto Weapon", "", 130, "Auto Weapon")
-local shikaiButton, shikaiTickBox = createFeature(rightColumn, "Auto Shikai", "", 205, "Auto Shikai")
-local attackButton, attackTickBox = createFeature(rightColumn, "Auto Attack", "", 280, "Auto Attack")
-local resetCharacterButton, resetCharacterTickBox = createFeature(rightColumn, "Reset Character", "", 355, "Reset")
-local antiAfkButton, antiAfkTickBox = createFeature(rightColumn, "Anti AFK", "", 430, "Anti AFK")
+local boostUI = {}
+boostUI.roleButton = createButton(leftColumn, "Role: Win", UDim2.new(0, 14, 0, 81), UDim2.new(1, -28, 0, 28))
+boostUI.chooseSlotButton, boostUI.chooseSlotTickBox = createFeature(leftColumn, "Auto Choose Slot", "", 130, "Slot: A")
+boostUI.inviteButton, boostUI.inviteTickBox = createFeature(leftColumn, "Auto Invite", "", 205, "Targets")
+boostUI.inviteNamesBox = createInput(leftColumn, "name1,name2", 263)
+boostUI.acceptInviteButton, boostUI.acceptInviteTickBox = createFeature(leftColumn, "Auto Accept Invite", "", 310, "Accept From")
+boostUI.acceptInviteNamesBox = createInput(leftColumn, "name1,name2", 368)
+
+local farmUI = {}
+farmUI.farmButton, farmUI.farmTickBox = createFeature(rightColumn, "Auto Farm", "", 55, "Auto Farm")
+farmUI.weaponButton, farmUI.weaponTickBox = createFeature(rightColumn, "Auto Weapon", "", 130, "Auto Weapon")
+farmUI.shikaiButton, farmUI.shikaiTickBox = createFeature(rightColumn, "Auto Shikai", "", 205, "Auto Shikai")
+farmUI.attackButton, farmUI.attackTickBox = createFeature(rightColumn, "Auto Attack", "", 280, "Auto Attack")
+farmUI.resetCharacterButton, farmUI.resetCharacterTickBox = createFeature(rightColumn, "Reset Character", "", 355, "Reset")
+farmUI.antiAfkButton, farmUI.antiAfkTickBox = createFeature(rightColumn, "Anti AFK", "", 430, "Anti AFK")
 
 local hiddenResetControls = make("Frame", {
 	Parent = screenGui,
@@ -256,8 +275,9 @@ local hiddenResetControls = make("Frame", {
 	Size = UDim2.new(0, 0, 0, 0),
 })
 
-local resetButton = createButton(hiddenResetControls, "", UDim2.new(0, 0, 0, 0), UDim2.new(0, 0, 0, 0))
-local resetTickBox = createButton(hiddenResetControls, "", UDim2.new(0, 0, 0, 0), UDim2.new(0, 0, 0, 0))
+local hiddenUI = {}
+hiddenUI.resetButton = createButton(hiddenResetControls, "", UDim2.new(0, 0, 0, 0), UDim2.new(0, 0, 0, 0))
+hiddenUI.resetTickBox = createButton(hiddenResetControls, "", UDim2.new(0, 0, 0, 0), UDim2.new(0, 0, 0, 0))
 
 local hiddenControls = make("Frame", {
 	Parent = screenGui,
@@ -265,19 +285,19 @@ local hiddenControls = make("Frame", {
 	Size = UDim2.new(0, 0, 0, 0),
 })
 
-local profileNameBox = make("TextBox", {
+hiddenUI.profileNameBox = make("TextBox", {
 	Parent = hiddenControls,
 	Text = "default",
 })
 
-local createConfigButton = createButton(hiddenControls, "", UDim2.new(0, 0, 0, 0), UDim2.new(0, 0, 0, 0))
-local createConfigTickBox = createButton(hiddenControls, "", UDim2.new(0, 0, 0, 0), UDim2.new(0, 0, 0, 0))
-local loadConfigButton = createButton(hiddenControls, "", UDim2.new(0, 0, 0, 0), UDim2.new(0, 0, 0, 0))
-local loadConfigTickBox = createButton(hiddenControls, "", UDim2.new(0, 0, 0, 0), UDim2.new(0, 0, 0, 0))
-local setAutoloadButton = createButton(hiddenControls, "", UDim2.new(0, 0, 0, 0), UDim2.new(0, 0, 0, 0))
-local setAutoloadTickBox = createButton(hiddenControls, "", UDim2.new(0, 0, 0, 0), UDim2.new(0, 0, 0, 0))
-local overwriteConfigButton = createButton(hiddenControls, "", UDim2.new(0, 0, 0, 0), UDim2.new(0, 0, 0, 0))
-local overwriteConfigTickBox = createButton(hiddenControls, "", UDim2.new(0, 0, 0, 0), UDim2.new(0, 0, 0, 0))
+hiddenUI.createConfigButton = createButton(hiddenControls, "", UDim2.new(0, 0, 0, 0), UDim2.new(0, 0, 0, 0))
+hiddenUI.createConfigTickBox = createButton(hiddenControls, "", UDim2.new(0, 0, 0, 0), UDim2.new(0, 0, 0, 0))
+hiddenUI.loadConfigButton = createButton(hiddenControls, "", UDim2.new(0, 0, 0, 0), UDim2.new(0, 0, 0, 0))
+hiddenUI.loadConfigTickBox = createButton(hiddenControls, "", UDim2.new(0, 0, 0, 0), UDim2.new(0, 0, 0, 0))
+hiddenUI.setAutoloadButton = createButton(hiddenControls, "", UDim2.new(0, 0, 0, 0), UDim2.new(0, 0, 0, 0))
+hiddenUI.setAutoloadTickBox = createButton(hiddenControls, "", UDim2.new(0, 0, 0, 0), UDim2.new(0, 0, 0, 0))
+hiddenUI.overwriteConfigButton = createButton(hiddenControls, "", UDim2.new(0, 0, 0, 0), UDim2.new(0, 0, 0, 0))
+hiddenUI.overwriteConfigTickBox = createButton(hiddenControls, "", UDim2.new(0, 0, 0, 0), UDim2.new(0, 0, 0, 0))
 local autoFarmEnabled = false
 local autoWeaponEnabled = false
 local autoShikaiEnabled = false
@@ -302,6 +322,7 @@ local rogueResetConsumed = false
 local missionResetArmed = false
 local lastFarmRunAt = 0
 local selectedSlot = "A"
+local selectedBoostRole = "win"
 local lastSlotChooseAt = 0
 local lastInviteOpenAt = 0
 local lastInviteScrollAt = 0
@@ -321,8 +342,9 @@ local INVITE_OPEN_COOLDOWN = 2
 local INVITE_TARGET_COOLDOWN = 10
 local HOLLOW_SPAWN_PADDING = Vector3.new(100, 60, 100)
 local HOLLOW_SPAWN_RADIUS_PADDING = 140
-local PROFILE_FOLDER = "cocacola_profiles"
-local AUTOLOAD_PROFILE_FILE = PROFILE_FOLDER .. "/autoload.txt"
+local PROFILE_ROOT_FOLDER = "cocacola"
+local PROFILE_FOLDER = PROFILE_ROOT_FOLDER .. "/config"
+local AUTOLOAD_PROFILE_FILE = PROFILE_ROOT_FOLDER .. "/autoload.txt"
 
 local function updateTickBox(tickBox, enabled)
 	if enabled then
@@ -335,7 +357,11 @@ local function updateTickBox(tickBox, enabled)
 end
 
 local function refreshSelectedSlotLabel()
-	chooseSlotButton.Text = "Slot: " .. selectedSlot
+	boostUI.chooseSlotButton.Text = "Slot: " .. selectedSlot
+end
+
+local function refreshSelectedRoleLabel()
+	boostUI.roleButton.Text = "Role: " .. (selectedBoostRole == "win" and "Win" or "Lose")
 end
 
 local function applyCharacterNoclip(character)
@@ -1102,7 +1128,7 @@ end
 
 local function toggleAutoFarm()
 	autoFarmEnabled = not autoFarmEnabled
-	updateTickBox(farmTickBox, autoFarmEnabled)
+	updateTickBox(farmUI.farmTickBox, autoFarmEnabled)
 
 	if autoFarmEnabled then
 		startShiftLockBlock()
@@ -1145,7 +1171,7 @@ end
 
 local function toggleAutoWeapon()
 	autoWeaponEnabled = not autoWeaponEnabled
-	updateTickBox(weaponTickBox, autoWeaponEnabled)
+	updateTickBox(farmUI.weaponTickBox, autoWeaponEnabled)
 
 	if autoWeaponEnabled then
 		lastWeaponRequestAt = 0
@@ -1173,7 +1199,7 @@ end
 
 local function toggleAutoShikai()
 	autoShikaiEnabled = not autoShikaiEnabled
-	updateTickBox(shikaiTickBox, autoShikaiEnabled)
+	updateTickBox(farmUI.shikaiTickBox, autoShikaiEnabled)
 
 	if autoShikaiEnabled then
 		lastShikaiRequestAt = 0
@@ -1198,7 +1224,7 @@ end
 
 local function toggleAutoAttack()
 	autoAttackEnabled = not autoAttackEnabled
-	updateTickBox(attackTickBox, autoAttackEnabled)
+	updateTickBox(farmUI.attackTickBox, autoAttackEnabled)
 
 	if autoAttackEnabled then
 		runAttackLoop()
@@ -1245,7 +1271,7 @@ end
 
 local function toggleAutoReset()
 	autoResetEnabled = not autoResetEnabled
-	updateTickBox(resetTickBox, autoResetEnabled)
+	updateTickBox(hiddenUI.resetTickBox, autoResetEnabled)
 
 	if autoResetEnabled then
 		runAutoResetLoop()
@@ -1371,11 +1397,11 @@ local function getTargetNamesFromBox(textBox)
 end
 
 local function getInviteTargets()
-	return getTargetNamesFromBox(inviteNamesBox)
+	return getTargetNamesFromBox(boostUI.inviteNamesBox)
 end
 
 local function getAcceptInviteTargets()
-	return getTargetNamesFromBox(acceptInviteNamesBox)
+	return getTargetNamesFromBox(boostUI.acceptInviteNamesBox)
 end
 
 local function isInviteMenuOpen()
@@ -1552,7 +1578,7 @@ end
 
 local function toggleAutoInvite()
 	autoInviteEnabled = not autoInviteEnabled
-	updateTickBox(inviteTickBox, autoInviteEnabled)
+	updateTickBox(boostUI.inviteTickBox, autoInviteEnabled)
 
 	if autoInviteEnabled then
 		runAutoInviteLoop()
@@ -1570,7 +1596,7 @@ end
 
 local function toggleAutoAcceptInvite()
 	autoAcceptInviteEnabled = not autoAcceptInviteEnabled
-	updateTickBox(acceptInviteTickBox, autoAcceptInviteEnabled)
+	updateTickBox(boostUI.acceptInviteTickBox, autoAcceptInviteEnabled)
 
 	if autoAcceptInviteEnabled then
 		runAutoAcceptInviteLoop()
@@ -1595,21 +1621,25 @@ end
 
 local function toggleAntiAfk()
 	antiAfkEnabled = not antiAfkEnabled
-	updateTickBox(antiAfkTickBox, antiAfkEnabled)
+	updateTickBox(farmUI.antiAfkTickBox, antiAfkEnabled)
 	applyAntiAfkState()
 end
 
 local function getProfileName()
-	local rawName = (profileNameBox.Text or ""):gsub("^%s+", ""):gsub("%s+$", "")
-	if rawName == "" then
-		rawName = "default"
-	end
-
+	local rawName = tostring(player.Name or "default")
 	return rawName:gsub("[\\/:*?\"<>|]", "_")
 end
 
+local function getRoleFolderName()
+	if selectedBoostRole == "lose" then
+		return "lose"
+	end
+
+	return "win"
+end
+
 local function getProfilePath()
-	return PROFILE_FOLDER .. "/" .. getProfileName() .. ".json"
+	return PROFILE_FOLDER .. "/" .. getRoleFolderName() .. "/" .. getProfileName() .. ".json"
 end
 
 local function ensureProfileFolder()
@@ -1617,8 +1647,23 @@ local function ensureProfileFolder()
 		return false
 	end
 
+	if not isfolder(PROFILE_ROOT_FOLDER) then
+		makefolder(PROFILE_ROOT_FOLDER)
+	end
+
 	if not isfolder(PROFILE_FOLDER) then
 		makefolder(PROFILE_FOLDER)
+	end
+
+	local winFolder = PROFILE_FOLDER .. "/win"
+	local loseFolder = PROFILE_FOLDER .. "/lose"
+
+	if not isfolder(winFolder) then
+		makefolder(winFolder)
+	end
+
+	if not isfolder(loseFolder) then
+		makefolder(loseFolder)
 	end
 
 	return true
@@ -1638,9 +1683,10 @@ local function saveCurrentProfile()
 	end
 
 	local payload = {
+		selectedBoostRole = selectedBoostRole,
 		selectedSlot = selectedSlot,
-		inviteNames = inviteNamesBox.Text,
-		acceptInviteNames = acceptInviteNamesBox.Text,
+		inviteNames = boostUI.inviteNamesBox.Text,
+		acceptInviteNames = boostUI.acceptInviteNamesBox.Text,
 		autoFarmEnabled = autoFarmEnabled,
 		autoWeaponEnabled = autoWeaponEnabled,
 		autoShikaiEnabled = autoShikaiEnabled,
@@ -1670,13 +1716,18 @@ local function loadProfile()
 		return
 	end
 
+	if decoded.selectedBoostRole == "win" or decoded.selectedBoostRole == "lose" then
+		selectedBoostRole = decoded.selectedBoostRole
+		refreshSelectedRoleLabel()
+	end
+
 	if decoded.selectedSlot == "A" or decoded.selectedSlot == "B" or decoded.selectedSlot == "C" then
 		selectedSlot = decoded.selectedSlot
 		refreshSelectedSlotLabel()
 	end
 
-	inviteNamesBox.Text = tostring(decoded.inviteNames or "")
-	acceptInviteNamesBox.Text = tostring(decoded.acceptInviteNames or "")
+	boostUI.inviteNamesBox.Text = tostring(decoded.inviteNames or "")
+	boostUI.acceptInviteNamesBox.Text = tostring(decoded.acceptInviteNames or "")
 
 	setToggleState(decoded.autoFarmEnabled == true, autoFarmEnabled, toggleAutoFarm)
 	setToggleState(decoded.autoWeaponEnabled == true, autoWeaponEnabled, toggleAutoWeapon)
@@ -1690,15 +1741,6 @@ local function loadProfile()
 end
 
 local function createConfigProfile()
-	if not writefile or not isfile or not ensureProfileFolder() then
-		return
-	end
-
-	local profilePath = getProfilePath()
-	if isfile(profilePath) then
-		return
-	end
-
 	saveCurrentProfile()
 end
 
@@ -1711,21 +1753,30 @@ local function setAutoloadProfile()
 		return
 	end
 
-	writefile(AUTOLOAD_PROFILE_FILE, getProfileName())
+	writefile(AUTOLOAD_PROFILE_FILE, getRoleFolderName() .. "/" .. getProfileName())
 end
 
 local function loadAutoloadProfile()
-	if not readfile or not isfile or not isfile(AUTOLOAD_PROFILE_FILE) then
-		return
+	if readfile and isfile and isfile(AUTOLOAD_PROFILE_FILE) then
+		local saved = tostring(readfile(AUTOLOAD_PROFILE_FILE) or "")
+		local savedRole = saved:match("^(win)/") or saved:match("^(lose)/")
+		if savedRole == "win" or savedRole == "lose" then
+			selectedBoostRole = savedRole
+			refreshSelectedRoleLabel()
+		end
 	end
 
-	local autoloadName = (readfile(AUTOLOAD_PROFILE_FILE) or ""):gsub("^%s+", ""):gsub("%s+$", "")
-	if autoloadName == "" then
-		return
-	end
-
-	profileNameBox.Text = autoloadName
 	loadProfile()
+end
+
+local function cycleSelectedRole()
+	if selectedBoostRole == "win" then
+		selectedBoostRole = "lose"
+	else
+		selectedBoostRole = "win"
+	end
+
+	refreshSelectedRoleLabel()
 end
 
 local function runAutoChooseSlotLoop()
@@ -1739,7 +1790,7 @@ end
 
 local function toggleAutoChooseSlot()
 	autoChooseSlotEnabled = not autoChooseSlotEnabled
-	updateTickBox(chooseSlotTickBox, autoChooseSlotEnabled)
+	updateTickBox(boostUI.chooseSlotTickBox, autoChooseSlotEnabled)
 
 	if autoChooseSlotEnabled then
 		runAutoChooseSlotLoop()
@@ -1801,68 +1852,74 @@ local function hopLowPlayerServer()
 	end
 end
 
-farmButton.MouseButton1Click:Connect(toggleAutoFarm)
-farmTickBox.MouseButton1Click:Connect(toggleAutoFarm)
+pcall(function()
+	farmUI.farmButton.MouseButton1Click:Connect(toggleAutoFarm)
+	farmUI.farmTickBox.MouseButton1Click:Connect(toggleAutoFarm)
 
-weaponButton.MouseButton1Click:Connect(toggleAutoWeapon)
-weaponTickBox.MouseButton1Click:Connect(toggleAutoWeapon)
+	farmUI.weaponButton.MouseButton1Click:Connect(toggleAutoWeapon)
+	farmUI.weaponTickBox.MouseButton1Click:Connect(toggleAutoWeapon)
 
-shikaiButton.MouseButton1Click:Connect(toggleAutoShikai)
-shikaiTickBox.MouseButton1Click:Connect(toggleAutoShikai)
+	farmUI.shikaiButton.MouseButton1Click:Connect(toggleAutoShikai)
+	farmUI.shikaiTickBox.MouseButton1Click:Connect(toggleAutoShikai)
 
-attackButton.MouseButton1Click:Connect(toggleAutoAttack)
-attackTickBox.MouseButton1Click:Connect(toggleAutoAttack)
+	farmUI.attackButton.MouseButton1Click:Connect(toggleAutoAttack)
+	farmUI.attackTickBox.MouseButton1Click:Connect(toggleAutoAttack)
 
-resetCharacterButton.MouseButton1Click:Connect(resetCharacterOnce)
-resetCharacterTickBox.MouseButton1Click:Connect(resetCharacterOnce)
+	farmUI.resetCharacterButton.MouseButton1Click:Connect(resetCharacterOnce)
+	farmUI.resetCharacterTickBox.MouseButton1Click:Connect(resetCharacterOnce)
 
-chooseSlotButton.MouseButton1Click:Connect(cycleSelectedSlot)
-chooseSlotTickBox.MouseButton1Click:Connect(toggleAutoChooseSlot)
+	boostUI.chooseSlotButton.MouseButton1Click:Connect(cycleSelectedSlot)
+	boostUI.chooseSlotTickBox.MouseButton1Click:Connect(toggleAutoChooseSlot)
 
-inviteButton.MouseButton1Click:Connect(function()
-	inviteNamesBox:CaptureFocus()
+	boostUI.roleButton.MouseButton1Click:Connect(cycleSelectedRole)
+
+	boostUI.inviteButton.MouseButton1Click:Connect(function()
+		boostUI.inviteNamesBox:CaptureFocus()
+	end)
+	boostUI.inviteTickBox.MouseButton1Click:Connect(toggleAutoInvite)
+
+	boostUI.acceptInviteButton.MouseButton1Click:Connect(function()
+		boostUI.acceptInviteNamesBox:CaptureFocus()
+	end)
+	boostUI.acceptInviteTickBox.MouseButton1Click:Connect(toggleAutoAcceptInvite)
+
+	farmUI.antiAfkButton.MouseButton1Click:Connect(toggleAntiAfk)
+	farmUI.antiAfkTickBox.MouseButton1Click:Connect(toggleAntiAfk)
+
+	hiddenUI.createConfigButton.MouseButton1Click:Connect(createConfigProfile)
+	hiddenUI.createConfigTickBox.MouseButton1Click:Connect(createConfigProfile)
+	hiddenUI.loadConfigButton.MouseButton1Click:Connect(loadProfile)
+	hiddenUI.loadConfigTickBox.MouseButton1Click:Connect(loadProfile)
+	hiddenUI.setAutoloadButton.MouseButton1Click:Connect(setAutoloadProfile)
+	hiddenUI.setAutoloadTickBox.MouseButton1Click:Connect(setAutoloadProfile)
+	hiddenUI.overwriteConfigButton.MouseButton1Click:Connect(overwriteCurrentProfile)
+	hiddenUI.overwriteConfigTickBox.MouseButton1Click:Connect(overwriteCurrentProfile)
+
+	updateTickBox(farmUI.farmTickBox, autoFarmEnabled)
+	updateTickBox(farmUI.weaponTickBox, autoWeaponEnabled)
+	updateTickBox(farmUI.shikaiTickBox, autoShikaiEnabled)
+	updateTickBox(farmUI.attackTickBox, autoAttackEnabled)
+	updateTickBox(boostUI.chooseSlotTickBox, autoChooseSlotEnabled)
+	updateTickBox(boostUI.inviteTickBox, autoInviteEnabled)
+	updateTickBox(boostUI.acceptInviteTickBox, autoAcceptInviteEnabled)
+	updateTickBox(farmUI.antiAfkTickBox, antiAfkEnabled)
+	refreshSelectedRoleLabel()
+	farmUI.resetCharacterTickBox.Text = "USE"
+	farmUI.resetCharacterTickBox.BackgroundColor3 = theme.input
+	hiddenUI.createConfigTickBox.Text = "USE"
+	hiddenUI.createConfigTickBox.BackgroundColor3 = theme.input
+	hiddenUI.loadConfigTickBox.Text = "USE"
+	hiddenUI.loadConfigTickBox.BackgroundColor3 = theme.input
+	hiddenUI.setAutoloadTickBox.Text = "USE"
+	hiddenUI.setAutoloadTickBox.BackgroundColor3 = theme.input
+	hiddenUI.overwriteConfigTickBox.Text = "USE"
+	hiddenUI.overwriteConfigTickBox.BackgroundColor3 = theme.input
+	refreshSelectedSlotLabel()
+	hiddenUI.profileNameBox.Text = getProfileName()
+
+	disableGuiSelection(screenGui)
+	pcall(loadAutoloadProfile)
 end)
-inviteTickBox.MouseButton1Click:Connect(toggleAutoInvite)
-
-acceptInviteButton.MouseButton1Click:Connect(function()
-	acceptInviteNamesBox:CaptureFocus()
-end)
-acceptInviteTickBox.MouseButton1Click:Connect(toggleAutoAcceptInvite)
-
-antiAfkButton.MouseButton1Click:Connect(toggleAntiAfk)
-antiAfkTickBox.MouseButton1Click:Connect(toggleAntiAfk)
-
-createConfigButton.MouseButton1Click:Connect(createConfigProfile)
-createConfigTickBox.MouseButton1Click:Connect(createConfigProfile)
-loadConfigButton.MouseButton1Click:Connect(loadProfile)
-loadConfigTickBox.MouseButton1Click:Connect(loadProfile)
-setAutoloadButton.MouseButton1Click:Connect(setAutoloadProfile)
-setAutoloadTickBox.MouseButton1Click:Connect(setAutoloadProfile)
-overwriteConfigButton.MouseButton1Click:Connect(overwriteCurrentProfile)
-overwriteConfigTickBox.MouseButton1Click:Connect(overwriteCurrentProfile)
-
-updateTickBox(farmTickBox, autoFarmEnabled)
-updateTickBox(weaponTickBox, autoWeaponEnabled)
-updateTickBox(shikaiTickBox, autoShikaiEnabled)
-updateTickBox(attackTickBox, autoAttackEnabled)
-updateTickBox(chooseSlotTickBox, autoChooseSlotEnabled)
-updateTickBox(inviteTickBox, autoInviteEnabled)
-updateTickBox(acceptInviteTickBox, autoAcceptInviteEnabled)
-updateTickBox(antiAfkTickBox, antiAfkEnabled)
-resetCharacterTickBox.Text = "USE"
-resetCharacterTickBox.BackgroundColor3 = theme.input
-createConfigTickBox.Text = "USE"
-createConfigTickBox.BackgroundColor3 = theme.input
-loadConfigTickBox.Text = "USE"
-loadConfigTickBox.BackgroundColor3 = theme.input
-setAutoloadTickBox.Text = "USE"
-setAutoloadTickBox.BackgroundColor3 = theme.input
-overwriteConfigTickBox.Text = "USE"
-overwriteConfigTickBox.BackgroundColor3 = theme.input
-refreshSelectedSlotLabel()
-
-disableGuiSelection(screenGui)
-pcall(loadAutoloadProfile)
 
 local dragging = false
 local dragStart
