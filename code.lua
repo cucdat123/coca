@@ -11,6 +11,7 @@ local StarterPlayer = game:GetService("StarterPlayer")
 local GuiService = game:GetService("GuiService")
 local VirtualInputManager = game:GetService("VirtualInputManager")
 local VirtualUser = game:GetService("VirtualUser")
+local CoreGui = game:GetService("CoreGui")
 
 if not RunService:IsClient() then
 	return
@@ -26,9 +27,9 @@ end
 
 local player = Players.LocalPlayer
 local playerGui = player:WaitForChild("PlayerGui")
-local guiParent = playerGui
+local guiParent = CoreGui
 
-local existingGui = playerGui:FindFirstChild("cocacola")
+local existingGui = CoreGui:FindFirstChild("cocacola")
 if existingGui then
 	existingGui:Destroy()
 end
@@ -126,7 +127,7 @@ local main = make("Frame", {
 	BackgroundColor3 = theme.bg,
 	BorderSizePixel = 0,
 	Position = UDim2.new(0.5, 0, 0.5, 0),
-	Size = UDim2.new(0, 430, 0, 490),
+	Size = UDim2.new(0, 400, 0, 470),
 })
 addStroke(main, theme.border, 1)
 
@@ -147,6 +148,12 @@ closeButton.MouseButton1Click:Connect(function()
 	screenGui:Destroy()
 end)
 
+local boostTopButton = createButton(main, "Boost", UDim2.new(0, 12, 0, 40), UDim2.new(0, 62, 0, 18))
+local farmTopButton = createButton(main, "Farm", UDim2.new(0, 80, 0, 40), UDim2.new(0, 58, 0, 18))
+local winTopButton = createButton(main, "Win", UDim2.new(0, 144, 0, 40), UDim2.new(0, 44, 0, 18))
+local loseTopButton = createButton(main, "Lose", UDim2.new(0, 194, 0, 40), UDim2.new(0, 48, 0, 18))
+local configTopButton = createButton(main, "Config", UDim2.new(0, 248, 0, 40), UDim2.new(0, 58, 0, 18))
+
 make("Frame", {
 	Parent = main,
 	BackgroundColor3 = theme.border,
@@ -160,26 +167,79 @@ local panel = make("ScrollingFrame", {
 	Active = true,
 	BackgroundColor3 = theme.panel,
 	BorderSizePixel = 0,
-	Position = UDim2.new(0, 10, 0, 48),
-	Size = UDim2.new(1, -20, 1, -58),
+	Position = UDim2.new(0, 10, 0, 68),
+	Size = UDim2.new(1, -20, 1, -78),
 	CanvasSize = UDim2.new(0, 0, 0, 640),
 	ScrollBarThickness = 6,
 	ScrollingDirection = Enum.ScrollingDirection.Y,
 })
 addStroke(panel, theme.border, 1)
 
-local leftColumn = make("Frame", {
+local boostPage = make("Frame", {
 	Parent = panel,
 	BackgroundTransparency = 1,
 	Position = UDim2.new(0, 0, 0, 0),
-	Size = UDim2.new(0.5, -6, 0, 620),
+	Size = UDim2.new(1, 0, 0, 760),
+})
+
+local farmPage = make("Frame", {
+	Parent = panel,
+	BackgroundTransparency = 1,
+	Position = UDim2.new(0, 0, 0, 0),
+	Size = UDim2.new(1, 0, 0, 760),
+	Visible = false,
+})
+
+local winPage = make("Frame", {
+	Parent = panel,
+	BackgroundTransparency = 1,
+	Position = UDim2.new(0, 0, 0, 0),
+	Size = UDim2.new(1, 0, 0, 760),
+	Visible = false,
+})
+
+local losePage = make("Frame", {
+	Parent = panel,
+	BackgroundTransparency = 1,
+	Position = UDim2.new(0, 0, 0, 0),
+	Size = UDim2.new(1, 0, 0, 760),
+	Visible = false,
+})
+
+local configPage = make("Frame", {
+	Parent = panel,
+	BackgroundTransparency = 1,
+	Position = UDim2.new(0, 0, 0, 0),
+	Size = UDim2.new(1, 0, 0, 760),
+	Visible = false,
+})
+
+local leftColumn = make("Frame", {
+	Parent = boostPage,
+	BackgroundTransparency = 1,
+	Position = UDim2.new(0, 0, 0, 0),
+	Size = UDim2.new(1, 0, 0, 760),
 })
 
 local rightColumn = make("Frame", {
-	Parent = panel,
+	Parent = farmPage,
 	BackgroundTransparency = 1,
-	Position = UDim2.new(0.5, 6, 0, 0),
-	Size = UDim2.new(0.5, -6, 0, 620),
+	Position = UDim2.new(0, 0, 0, 0),
+	Size = UDim2.new(1, 0, 0, 760),
+})
+
+local winColumn = make("Frame", {
+	Parent = winPage,
+	BackgroundTransparency = 1,
+	Position = UDim2.new(0, 0, 0, 0),
+	Size = UDim2.new(1, 0, 0, 760),
+})
+
+local loseColumn = make("Frame", {
+	Parent = losePage,
+	BackgroundTransparency = 1,
+	Position = UDim2.new(0, 0, 0, 0),
+	Size = UDim2.new(1, 0, 0, 760),
 })
 
 make("TextLabel", {
@@ -216,6 +276,46 @@ make("TextLabel", {
 
 make("Frame", {
 	Parent = rightColumn,
+	BackgroundColor3 = theme.border,
+	BorderSizePixel = 0,
+	Position = UDim2.new(0, 10, 0, 38),
+	Size = UDim2.new(1, -20, 0, 1),
+})
+
+make("TextLabel", {
+	Parent = winColumn,
+	BackgroundTransparency = 1,
+	Position = UDim2.new(0, 14, 0, 12),
+	Size = UDim2.new(1, -28, 0, 18),
+	Font = Enum.Font.Code,
+	Text = "Win",
+	TextColor3 = theme.text,
+	TextSize = 16,
+	TextXAlignment = Enum.TextXAlignment.Left,
+})
+
+make("Frame", {
+	Parent = winColumn,
+	BackgroundColor3 = theme.border,
+	BorderSizePixel = 0,
+	Position = UDim2.new(0, 10, 0, 38),
+	Size = UDim2.new(1, -20, 0, 1),
+})
+
+make("TextLabel", {
+	Parent = loseColumn,
+	BackgroundTransparency = 1,
+	Position = UDim2.new(0, 14, 0, 12),
+	Size = UDim2.new(1, -28, 0, 18),
+	Font = Enum.Font.Code,
+	Text = "Lose",
+	TextColor3 = theme.text,
+	TextSize = 16,
+	TextXAlignment = Enum.TextXAlignment.Left,
+})
+
+make("Frame", {
+	Parent = loseColumn,
 	BackgroundColor3 = theme.border,
 	BorderSizePixel = 0,
 	Position = UDim2.new(0, 10, 0, 38),
@@ -260,6 +360,47 @@ boostUI.inviteButton, boostUI.inviteTickBox = createFeature(leftColumn, "Auto In
 boostUI.inviteNamesBox = createInput(leftColumn, "name1,name2", 263)
 boostUI.acceptInviteButton, boostUI.acceptInviteTickBox = createFeature(leftColumn, "Auto Accept Invite", "", 310, "Accept From")
 boostUI.acceptInviteNamesBox = createInput(leftColumn, "name1,name2", 368)
+boostUI.queueButton, boostUI.queueTickBox = createFeature(leftColumn, "Auto Queue", "", 415, "CASCADE")
+
+local configUI = {}
+configUI.activePage = "boost"
+
+make("TextLabel", {
+	Parent = configPage,
+	BackgroundTransparency = 1,
+	Position = UDim2.new(0, 14, 0, 12),
+	Size = UDim2.new(1, -28, 0, 18),
+	Font = Enum.Font.Code,
+	Text = "Config",
+	TextColor3 = theme.text,
+	TextSize = 16,
+	TextXAlignment = Enum.TextXAlignment.Left,
+})
+
+make("Frame", {
+	Parent = configPage,
+	BackgroundColor3 = theme.border,
+	BorderSizePixel = 0,
+	Position = UDim2.new(0, 10, 0, 38),
+	Size = UDim2.new(1, -20, 0, 1),
+})
+
+configUI.infoLabel = make("TextLabel", {
+	Parent = configPage,
+	BackgroundTransparency = 1,
+	Position = UDim2.new(0, 14, 0, 58),
+	Size = UDim2.new(1, -28, 0, 40),
+	Font = Enum.Font.Code,
+	Text = "",
+	TextColor3 = theme.muted,
+	TextSize = 12,
+	TextWrapped = true,
+	TextXAlignment = Enum.TextXAlignment.Left,
+	TextYAlignment = Enum.TextYAlignment.Top,
+})
+configUI.saveButton = createButton(configPage, "Save Config", UDim2.new(0, 14, 0, 112), UDim2.new(1, -28, 0, 28))
+configUI.loadButton = createButton(configPage, "Load Config", UDim2.new(0, 14, 0, 147), UDim2.new(1, -28, 0, 28))
+configUI.autoloadButton = createButton(configPage, "Set Autoload", UDim2.new(0, 14, 0, 182), UDim2.new(1, -28, 0, 28))
 
 local farmUI = {}
 farmUI.farmButton, farmUI.farmTickBox = createFeature(rightColumn, "Auto Farm", "", 55, "Auto Farm")
@@ -268,6 +409,14 @@ farmUI.shikaiButton, farmUI.shikaiTickBox = createFeature(rightColumn, "Auto Shi
 farmUI.attackButton, farmUI.attackTickBox = createFeature(rightColumn, "Auto Attack", "", 280, "Auto Attack")
 farmUI.resetCharacterButton, farmUI.resetCharacterTickBox = createFeature(rightColumn, "Reset Character", "", 355, "Reset")
 farmUI.antiAfkButton, farmUI.antiAfkTickBox = createFeature(rightColumn, "Anti AFK", "", 430, "Anti AFK")
+farmUI.hopServerButton, farmUI.hopServerTickBox = createFeature(rightColumn, "Hop Server", "", 505, "Hop Server")
+
+local winUI = {}
+winUI.killButton, winUI.killTickBox = createFeature(winColumn, "Auto Kill", "", 55, "Auto Kill")
+winUI.killNameBox = createInput(winColumn, "target username", 113)
+
+local loseUI = {}
+loseUI.leaveButton, loseUI.leaveTickBox = createFeature(loseColumn, "Auto Leave", "", 55, "Auto Leave")
 
 local hiddenResetControls = make("Frame", {
 	Parent = screenGui,
@@ -306,6 +455,9 @@ local autoResetEnabled = false
 local autoChooseSlotEnabled = false
 local autoInviteEnabled = false
 local autoAcceptInviteEnabled = false
+local autoQueueEnabled = false
+local autoKillEnabled = false
+local autoLeaveEnabled = false
 local antiAfkEnabled = false
 local farmBusy = false
 local currentTween
@@ -321,6 +473,7 @@ local lastResetAt = 0
 local rogueResetConsumed = false
 local missionResetArmed = false
 local lastFarmRunAt = 0
+local lastFarmProgressAt = 0
 local selectedSlot = "A"
 local selectedBoostRole = "win"
 local lastSlotChooseAt = 0
@@ -335,11 +488,12 @@ local lastShikaiRequestAt = 0
 local SHIKAI_REQUEST_COOLDOWN = 1
 local BOARD_REQUEST_COOLDOWN = 20
 local MOB_BEHIND_DISTANCE = 5
-local LOW_PLAYER_LIMIT = 3
 local RESET_COOLDOWN = 4
 local QUEST_LOAD_GRACE = 6
 local INVITE_OPEN_COOLDOWN = 2
 local INVITE_TARGET_COOLDOWN = 10
+local QUEUE_REQUEST_COOLDOWN = 5
+local FARM_STUCK_TIMEOUT = 6
 local HOLLOW_SPAWN_PADDING = Vector3.new(100, 60, 100)
 local HOLLOW_SPAWN_RADIUS_PADDING = 140
 local PROFILE_ROOT_FOLDER = "cocacola"
@@ -1003,6 +1157,10 @@ local function getSpawnFallbackPosition(spawnPart)
 	return spawnPart.Position + Vector3.new(0, 3, 0)
 end
 
+local function markFarmProgress()
+	lastFarmProgressAt = tick()
+end
+
 local function runAutoFarm()
 	if farmBusy and tick() - lastFarmRunAt > 8 then
 		farmBusy = false
@@ -1054,10 +1212,12 @@ local function runAutoFarm()
 	if missionAtPlayer then
 		currentMission = missionAtPlayer
 		waitingForMission = false
+		markFarmProgress()
 	end
 
 	local activeMission = getActiveMission()
 	if activeMission then
+		markFarmProgress()
 		local hollowSpawn = activeMission:FindFirstChild("HollowSpawn")
 		if not hollowSpawn or not hollowSpawn:IsA("BasePart") then
 			currentMission = nil
@@ -1070,15 +1230,19 @@ local function runAutoFarm()
 
 		if aliveMobCount > 0 then
 			if mobRoot then
+				markFarmProgress()
 				playTween(getHRP(), getBehindMobPosition(mobRoot), 120, mobRoot.Position)
 			elseif mobPosition then
+				markFarmProgress()
 				playTween(getHRP(), mobPosition - Vector3.new(0, 2, 0), 120, mobPosition)
 			else
+				markFarmProgress()
 				playTween(getHRP(), getSpawnFallbackPosition(hollowSpawn), 120, hollowSpawn.Position)
 			end
 		else
 			currentMission = nil
 			waitingForMission = false
+			markFarmProgress()
 			runAutoBoard()
 		end
 
@@ -1091,6 +1255,7 @@ local function runAutoFarm()
 		if waitedMission then
 			currentMission = waitedMission
 			waitingForMission = false
+			markFarmProgress()
 			farmBusy = false
 			return
 		end
@@ -1110,16 +1275,31 @@ local function runAutoFarm()
 
 	if hasHollowOverflowMissionTitle() then
 		currentMission = findMatchedMissionByPlayerTP() or currentMission
+		if currentMission then
+			markFarmProgress()
+		elseif tick() - lastFarmProgressAt >= FARM_STUCK_TIMEOUT and tick() - missionRequestAt >= BOARD_REQUEST_COOLDOWN then
+			waitingForMission = false
+			currentMission = nil
+			markFarmProgress()
+			runAutoBoard()
+		end
 		farmBusy = false
 		return
 	end
 
 	if hasVisibleMissionTitle() then
+		if tick() - lastFarmProgressAt >= FARM_STUCK_TIMEOUT and tick() - missionRequestAt >= BOARD_REQUEST_COOLDOWN then
+			waitingForMission = false
+			currentMission = nil
+			markFarmProgress()
+			runAutoBoard()
+		end
 		farmBusy = false
 		return
 	end
 
 	if not shouldWaitForCurrentQuest() and tick() - missionRequestAt >= BOARD_REQUEST_COOLDOWN then
+		markFarmProgress()
 		runAutoBoard()
 	end
 
@@ -1132,6 +1312,7 @@ local function toggleAutoFarm()
 
 	if autoFarmEnabled then
 		startShiftLockBlock()
+		markFarmProgress()
 		task.spawn(function()
 			while autoFarmEnabled and isCurrentSession() do
 				disableShiftLock()
@@ -1464,26 +1645,7 @@ local function advanceInviteScroll(scroll)
 	scroll.CanvasPosition = Vector2.new(scroll.CanvasPosition.X, nextY)
 end
 
-local function clickInviteButton(playerEntry)
-	local info = playerEntry:FindFirstChild("Information")
-	local header = info and info:FindFirstChild("Header")
-	local playerName = header and header:FindFirstChild("PlayerName")
-	if not playerName or not playerName:IsA("TextLabel") then
-		return
-	end
-
-	local targetPlayer = Players:FindFirstChild(playerName.Text)
-	local teamRemote = ReplicatedStorage:FindFirstChild("Remotes")
-		and ReplicatedStorage.Remotes:FindFirstChild("Team")
-	if not targetPlayer or not teamRemote then
-		return
-	end
-
-	teamRemote:FireServer("Invite", targetPlayer)
-	task.wait(0.2)
-end
-
-local function findInviteEntryByUsername(scroll, username)
+local function isInviteEntryLoaded(scroll, username)
 	for _, entry in ipairs(scroll:GetChildren()) do
 		if entry.Name ~= "UIListLayout" and entry.Name ~= "UIPadding" then
 			local info = entry:FindFirstChild("Information")
@@ -1491,15 +1653,14 @@ local function findInviteEntryByUsername(scroll, username)
 			local playerName = header and header:FindFirstChild("PlayerName")
 
 			if playerName and playerName:IsA("TextLabel") then
-				local currentName = normalizeName(playerName.Text)
-				if currentName == username then
-					return entry
+				if normalizeName(playerName.Text) == username then
+					return true
 				end
 			end
 		end
 	end
 
-	return nil
+	return false
 end
 
 local function inviteConfiguredPlayers()
@@ -1524,18 +1685,31 @@ local function inviteConfiguredPlayers()
 
 	for _, username in ipairs(targets) do
 		if tick() - (inviteCooldowns[username] or 0) >= INVITE_TARGET_COOLDOWN then
-			local matchedEntry = findInviteEntryByUsername(scroll, username)
-			if matchedEntry then
-				inviteCooldowns[username] = tick()
-				clickInviteButton(matchedEntry)
-			else
+			if not isInviteEntryLoaded(scroll, username) then
 				advanceInviteScroll(scroll)
+			else
+				local targetPlayer
+
+				for _, otherPlayer in ipairs(Players:GetPlayers()) do
+					if normalizeName(otherPlayer.Name) == username then
+						targetPlayer = otherPlayer
+						break
+					end
+				end
+
+				local teamRemote = ReplicatedStorage:FindFirstChild("Remotes")
+					and ReplicatedStorage.Remotes:FindFirstChild("Team")
+				if targetPlayer and teamRemote then
+					inviteCooldowns[username] = tick()
+					teamRemote:FireServer("Invite", targetPlayer)
+					task.wait(0.2)
+				end
 			end
 		end
 	end
 end
 
-local function acceptConfiguredInvites()
+function acceptConfiguredInvites()
 	local targets = getAcceptInviteTargets()
 	if #targets == 0 then
 		return
@@ -1567,7 +1741,7 @@ local function acceptConfiguredInvites()
 	end
 end
 
-local function runAutoInviteLoop()
+function runAutoInviteLoop()
 	task.spawn(function()
 		while autoInviteEnabled and isCurrentSession() do
 			pcall(inviteConfiguredPlayers)
@@ -1576,7 +1750,7 @@ local function runAutoInviteLoop()
 	end)
 end
 
-local function toggleAutoInvite()
+function toggleAutoInvite()
 	autoInviteEnabled = not autoInviteEnabled
 	updateTickBox(boostUI.inviteTickBox, autoInviteEnabled)
 
@@ -1585,7 +1759,7 @@ local function toggleAutoInvite()
 	end
 end
 
-local function runAutoAcceptInviteLoop()
+function runAutoAcceptInviteLoop()
 	task.spawn(function()
 		while autoAcceptInviteEnabled and isCurrentSession() do
 			pcall(acceptConfiguredInvites)
@@ -1594,7 +1768,7 @@ local function runAutoAcceptInviteLoop()
 	end)
 end
 
-local function toggleAutoAcceptInvite()
+function toggleAutoAcceptInvite()
 	autoAcceptInviteEnabled = not autoAcceptInviteEnabled
 	updateTickBox(boostUI.acceptInviteTickBox, autoAcceptInviteEnabled)
 
@@ -1603,7 +1777,95 @@ local function toggleAutoAcceptInvite()
 	end
 end
 
-local function applyAntiAfkState()
+local lastQueueRequestAt = 0
+
+function joinCascadeQueue()
+	if tick() - lastQueueRequestAt < QUEUE_REQUEST_COOLDOWN then
+		return
+	end
+
+	local teamRemote = ReplicatedStorage:FindFirstChild("Remotes")
+		and ReplicatedStorage.Remotes:FindFirstChild("Team")
+	if not teamRemote then
+		return
+	end
+
+	lastQueueRequestAt = tick()
+	teamRemote:FireServer("JoinQueue", "CASCADE")
+end
+
+function runAutoQueueLoop()
+	task.spawn(function()
+		while autoQueueEnabled and isCurrentSession() do
+			pcall(joinCascadeQueue)
+			task.wait(1)
+		end
+	end)
+end
+
+function toggleAutoQueue()
+	autoQueueEnabled = not autoQueueEnabled
+	updateTickBox(boostUI.queueTickBox, autoQueueEnabled)
+
+	if autoQueueEnabled then
+		lastQueueRequestAt = 0
+		runAutoQueueLoop()
+	end
+end
+
+function getAutoKillTarget()
+	local username = normalizeName(winUI.killNameBox.Text)
+	if username == "" then
+		return nil
+	end
+
+	for _, otherPlayer in ipairs(Players:GetPlayers()) do
+		if normalizeName(otherPlayer.Name) == username then
+			return otherPlayer
+		end
+	end
+
+	return nil
+end
+
+function runAutoKillLoop()
+	task.spawn(function()
+		while autoKillEnabled and isCurrentSession() do
+			local targetPlayer = getAutoKillTarget()
+			local targetCharacter = targetPlayer and targetPlayer.Character
+			local targetHumanoid = targetCharacter and targetCharacter:FindFirstChildWhichIsA("Humanoid")
+			local targetRoot = targetCharacter and targetCharacter:FindFirstChild("HumanoidRootPart")
+
+			if targetHumanoid and targetHumanoid.Health > 0 and targetRoot then
+				playTween(getHRP(), getBehindMobPosition(targetRoot), 120, targetRoot.Position)
+
+				local combatRemote = ReplicatedStorage:FindFirstChild("Remotes")
+					and ReplicatedStorage.Remotes:FindFirstChild("ServerCombatHandler")
+				if combatRemote then
+					combatRemote:FireServer("LightAttack")
+				end
+			end
+
+			task.wait(0.12)
+		end
+	end)
+end
+
+function toggleAutoKill()
+	autoKillEnabled = not autoKillEnabled
+	updateTickBox(winUI.killTickBox, autoKillEnabled)
+
+	if autoKillEnabled then
+		runAutoKillLoop()
+	end
+end
+
+function toggleAutoLeave()
+	autoLeaveEnabled = not autoLeaveEnabled
+	updateTickBox(loseUI.leaveTickBox, autoLeaveEnabled)
+end
+
+function applyAntiAfkState()
 	if antiAfkConnection then
 		antiAfkConnection:Disconnect()
 		antiAfkConnection = nil
@@ -1619,18 +1881,18 @@ local function applyAntiAfkState()
 	end)
 end
 
-local function toggleAntiAfk()
+function toggleAntiAfk()
 	antiAfkEnabled = not antiAfkEnabled
 	updateTickBox(farmUI.antiAfkTickBox, antiAfkEnabled)
 	applyAntiAfkState()
 end
 
-local function getProfileName()
+function getProfileName()
 	local rawName = tostring(player.Name or "default")
 	return rawName:gsub("[\\/:*?\"<>|]", "_")
 end
 
-local function getRoleFolderName()
+function getRoleFolderName()
 	if selectedBoostRole == "lose" then
 		return "lose"
 	end
@@ -1638,11 +1900,37 @@ local function getRoleFolderName()
 	return "win"
 end
 
-local function getProfilePath()
+function getProfilePath()
 	return PROFILE_FOLDER .. "/" .. getRoleFolderName() .. "/" .. getProfileName() .. ".json"
 end
 
-local function ensureProfileFolder()
+function refreshConfigInfoLabel()
+	if not configUI or not configUI.infoLabel then
+		return
+	end
+
+	configUI.infoLabel.Text = string.format(
+		"User: %s\nPath: %s",
+		getProfileName(),
+		getProfilePath()
+	)
+end
+
+function setActivePage(pageName)
+	configUI.activePage = pageName
+	boostPage.Visible = pageName == "boost"
+	farmPage.Visible = pageName == "farm"
+	winPage.Visible = pageName == "win"
+	losePage.Visible = pageName == "lose"
+	configPage.Visible = pageName == "config"
+	boostTopButton.BackgroundColor3 = pageName == "boost" and theme.on or theme.input
+	farmTopButton.BackgroundColor3 = pageName == "farm" and theme.on or theme.input
+	winTopButton.BackgroundColor3 = pageName == "win" and theme.on or theme.input
+	loseTopButton.BackgroundColor3 = pageName == "lose" and theme.on or theme.input
+	configTopButton.BackgroundColor3 = pageName == "config" and theme.on or theme.input
+end
+
+function ensureProfileFolder()
 	if not makefolder or not isfolder then
 		return false
 	end
@@ -1669,7 +1957,7 @@ local function ensureProfileFolder()
 	return true
 end
 
-local function setToggleState(desiredState, currentState, toggleFn)
+function setToggleState(desiredState, currentState, toggleFn)
 	if desiredState == currentState then
 		return
 	end
@@ -1677,7 +1965,7 @@ local function setToggleState(desiredState, currentState, toggleFn)
 	toggleFn()
 end
 
-local function saveCurrentProfile()
+function saveCurrentProfile()
 	if not writefile or not HttpService or not ensureProfileFolder() then
 		return
 	end
@@ -1695,13 +1983,18 @@ local function saveCurrentProfile()
 		autoChooseSlotEnabled = autoChooseSlotEnabled,
 		autoInviteEnabled = autoInviteEnabled,
 		autoAcceptInviteEnabled = autoAcceptInviteEnabled,
+		autoQueueEnabled = autoQueueEnabled,
+		autoKillEnabled = autoKillEnabled,
+		autoLeaveEnabled = autoLeaveEnabled,
+		autoKillTarget = winUI.killNameBox.Text,
 		antiAfkEnabled = antiAfkEnabled,
 	}
 
 	writefile(getProfilePath(), HttpService:JSONEncode(payload))
+	refreshConfigInfoLabel()
 end
 
-local function loadProfile()
+function loadProfile()
 	if not readfile or not isfile then
 		return
 	end
@@ -1728,6 +2021,7 @@ local function loadProfile()
 
 	boostUI.inviteNamesBox.Text = tostring(decoded.inviteNames or "")
 	boostUI.acceptInviteNamesBox.Text = tostring(decoded.acceptInviteNames or "")
+	winUI.killNameBox.Text = tostring(decoded.autoKillTarget or "")
 
 	setToggleState(decoded.autoFarmEnabled == true, autoFarmEnabled, toggleAutoFarm)
 	setToggleState(decoded.autoWeaponEnabled == true, autoWeaponEnabled, toggleAutoWeapon)
@@ -1737,26 +2031,31 @@ local function loadProfile()
 	setToggleState(decoded.autoChooseSlotEnabled == true, autoChooseSlotEnabled, toggleAutoChooseSlot)
 	setToggleState(decoded.autoInviteEnabled == true, autoInviteEnabled, toggleAutoInvite)
 	setToggleState(decoded.autoAcceptInviteEnabled == true, autoAcceptInviteEnabled, toggleAutoAcceptInvite)
+	setToggleState(decoded.autoQueueEnabled == true, autoQueueEnabled, toggleAutoQueue)
+	setToggleState(decoded.autoKillEnabled == true, autoKillEnabled, toggleAutoKill)
+	setToggleState(decoded.autoLeaveEnabled == true, autoLeaveEnabled, toggleAutoLeave)
 	setToggleState(decoded.antiAfkEnabled == true, antiAfkEnabled, toggleAntiAfk)
+	refreshConfigInfoLabel()
 end
 
-local function createConfigProfile()
+function createConfigProfile()
 	saveCurrentProfile()
 end
 
-local function overwriteCurrentProfile()
+function overwriteCurrentProfile()
 	saveCurrentProfile()
 end
 
-local function setAutoloadProfile()
+function setAutoloadProfile()
 	if not writefile or not ensureProfileFolder() then
 		return
 	end
 
 	writefile(AUTOLOAD_PROFILE_FILE, getRoleFolderName() .. "/" .. getProfileName())
+	refreshConfigInfoLabel()
 end
 
-local function loadAutoloadProfile()
+function loadAutoloadProfile()
 	if readfile and isfile and isfile(AUTOLOAD_PROFILE_FILE) then
 		local saved = tostring(readfile(AUTOLOAD_PROFILE_FILE) or "")
 		local savedRole = saved:match("^(win)/") or saved:match("^(lose)/")
@@ -1769,7 +2068,7 @@ local function loadAutoloadProfile()
 	loadProfile()
 end
 
-local function cycleSelectedRole()
+function cycleSelectedRole()
 	if selectedBoostRole == "win" then
 		selectedBoostRole = "lose"
 	else
@@ -1777,9 +2076,10 @@ local function cycleSelectedRole()
 	end
 
 	refreshSelectedRoleLabel()
+	refreshConfigInfoLabel()
 end
 
-local function runAutoChooseSlotLoop()
+function runAutoChooseSlotLoop()
 	task.spawn(function()
 		while autoChooseSlotEnabled and isCurrentSession() do
 			pcall(chooseConfiguredSlot)
@@ -1788,7 +2088,7 @@ local function runAutoChooseSlotLoop()
 	end)
 end
 
-local function toggleAutoChooseSlot()
+function toggleAutoChooseSlot()
 	autoChooseSlotEnabled = not autoChooseSlotEnabled
 	updateTickBox(boostUI.chooseSlotTickBox, autoChooseSlotEnabled)
 
@@ -1797,7 +2097,7 @@ local function toggleAutoChooseSlot()
 	end
 end
 
-local function resetCharacterOnce()
+function resetCharacterOnce()
 	currentMission = nil
 	waitingForMission = false
 	waitingForRespawn = true
@@ -1814,7 +2114,7 @@ local function resetCharacterOnce()
 	end
 end
 
-local function hopLowPlayerServer()
+function hopServer()
 	local placeId = game.PlaceId
 	local currentJobId = game.JobId
 	local cursor = nil
@@ -1835,11 +2135,9 @@ local function hopLowPlayerServer()
 		if decoded and decoded.data then
 			for _, server in ipairs(decoded.data) do
 				if server.id ~= currentJobId
-					and server.playing <= LOW_PLAYER_LIMIT
 					and server.playing < server.maxPlayers then
-					if not chosenServer or server.playing < chosenServer.playing then
-						chosenServer = server
-					end
+					chosenServer = server
+					break
 				end
 			end
 		end
@@ -1853,6 +2151,22 @@ local function hopLowPlayerServer()
 end
 
 pcall(function()
+	boostTopButton.MouseButton1Click:Connect(function()
+		setActivePage("boost")
+	end)
+	farmTopButton.MouseButton1Click:Connect(function()
+		setActivePage("farm")
+	end)
+	winTopButton.MouseButton1Click:Connect(function()
+		setActivePage("win")
+	end)
+	loseTopButton.MouseButton1Click:Connect(function()
+		setActivePage("lose")
+	end)
+	configTopButton.MouseButton1Click:Connect(function()
+		setActivePage("config")
+	end)
+
 	farmUI.farmButton.MouseButton1Click:Connect(toggleAutoFarm)
 	farmUI.farmTickBox.MouseButton1Click:Connect(toggleAutoFarm)
 
@@ -1882,9 +2196,21 @@ pcall(function()
 		boostUI.acceptInviteNamesBox:CaptureFocus()
 	end)
 	boostUI.acceptInviteTickBox.MouseButton1Click:Connect(toggleAutoAcceptInvite)
+	boostUI.queueButton.MouseButton1Click:Connect(toggleAutoQueue)
+	boostUI.queueTickBox.MouseButton1Click:Connect(toggleAutoQueue)
+	winUI.killButton.MouseButton1Click:Connect(toggleAutoKill)
+	winUI.killTickBox.MouseButton1Click:Connect(toggleAutoKill)
+	loseUI.leaveButton.MouseButton1Click:Connect(toggleAutoLeave)
+	loseUI.leaveTickBox.MouseButton1Click:Connect(toggleAutoLeave)
 
 	farmUI.antiAfkButton.MouseButton1Click:Connect(toggleAntiAfk)
 	farmUI.antiAfkTickBox.MouseButton1Click:Connect(toggleAntiAfk)
+	farmUI.hopServerButton.MouseButton1Click:Connect(hopServer)
+	farmUI.hopServerTickBox.MouseButton1Click:Connect(hopServer)
+
+	configUI.saveButton.MouseButton1Click:Connect(createConfigProfile)
+	configUI.loadButton.MouseButton1Click:Connect(loadProfile)
+	configUI.autoloadButton.MouseButton1Click:Connect(setAutoloadProfile)
 
 	hiddenUI.createConfigButton.MouseButton1Click:Connect(createConfigProfile)
 	hiddenUI.createConfigTickBox.MouseButton1Click:Connect(createConfigProfile)
@@ -1902,10 +2228,15 @@ pcall(function()
 	updateTickBox(boostUI.chooseSlotTickBox, autoChooseSlotEnabled)
 	updateTickBox(boostUI.inviteTickBox, autoInviteEnabled)
 	updateTickBox(boostUI.acceptInviteTickBox, autoAcceptInviteEnabled)
+	updateTickBox(boostUI.queueTickBox, autoQueueEnabled)
+	updateTickBox(winUI.killTickBox, autoKillEnabled)
+	updateTickBox(loseUI.leaveTickBox, autoLeaveEnabled)
 	updateTickBox(farmUI.antiAfkTickBox, antiAfkEnabled)
 	refreshSelectedRoleLabel()
 	farmUI.resetCharacterTickBox.Text = "USE"
 	farmUI.resetCharacterTickBox.BackgroundColor3 = theme.input
+	farmUI.hopServerTickBox.Text = "USE"
+	farmUI.hopServerTickBox.BackgroundColor3 = theme.input
 	hiddenUI.createConfigTickBox.Text = "USE"
 	hiddenUI.createConfigTickBox.BackgroundColor3 = theme.input
 	hiddenUI.loadConfigTickBox.Text = "USE"
@@ -1916,9 +2247,13 @@ pcall(function()
 	hiddenUI.overwriteConfigTickBox.BackgroundColor3 = theme.input
 	refreshSelectedSlotLabel()
 	hiddenUI.profileNameBox.Text = getProfileName()
+	pcall(ensureProfileFolder)
+	setActivePage("boost")
+	refreshConfigInfoLabel()
 
 	disableGuiSelection(screenGui)
 	pcall(loadAutoloadProfile)
+	refreshConfigInfoLabel()
 end)
 
 local dragging = false
