@@ -401,6 +401,30 @@ configUI.infoLabel = make("TextLabel", {
 configUI.saveButton = createButton(configPage, "Save Config", UDim2.new(0, 14, 0, 112), UDim2.new(1, -28, 0, 28))
 configUI.loadButton = createButton(configPage, "Load Config", UDim2.new(0, 14, 0, 147), UDim2.new(1, -28, 0, 28))
 configUI.autoloadButton = createButton(configPage, "Set Autoload", UDim2.new(0, 14, 0, 182), UDim2.new(1, -28, 0, 28))
+configUI.autoLoadLabel = make("TextLabel", {
+	Parent = configPage,
+	BackgroundTransparency = 1,
+	Position = UDim2.new(0, 14, 0, 222),
+	Size = UDim2.new(0, 260, 0, 18),
+	Font = Enum.Font.Code,
+	Text = "Auto Load Config",
+	TextColor3 = theme.text,
+	TextSize = 15,
+	TextXAlignment = Enum.TextXAlignment.Left,
+})
+configUI.autoLoadTickBox = make("TextButton", {
+	Parent = configPage,
+	AutoButtonColor = false,
+	BackgroundColor3 = theme.off,
+	BorderSizePixel = 0,
+	Position = UDim2.new(1, -52, 0, 216),
+	Size = UDim2.new(0, 32, 0, 32),
+	Font = Enum.Font.Code,
+	Text = "OFF",
+	TextColor3 = theme.text,
+	TextSize = 11,
+})
+addStroke(configUI.autoLoadTickBox, Color3.fromRGB(55, 55, 72), 1)
 
 local farmUI = {}
 farmUI.farmButton, farmUI.farmTickBox = createFeature(rightColumn, "Auto Farm", "", 55, "Auto Farm")
@@ -459,6 +483,7 @@ local autoQueueEnabled = false
 local autoKillEnabled = false
 local autoLeaveEnabled = false
 local antiAfkEnabled = false
+local autoLoadConfigEnabled = true
 local farmBusy = false
 local currentTween
 local noclipConnection
@@ -888,22 +913,28 @@ local function runAutoBoard()
 	local newRemote = findNewMissionBoardRemote(beforeRemotes, 2)
 	if newRemote then
 		newRemote:FireServer("Yes")
+		currentMission = nil
 		waitingForMission = true
+		waitingForRespawn = false
 		missionRequestAt = tick()
 		lastQuestAcceptAt = tick()
 		rogueResetConsumed = false
 		missionResetArmed = true
+		markFarmProgress()
 		return true
 	end
 
 	local fallbackRemote = player:FindFirstChild(closestBoard.Name)
 	if fallbackRemote then
 		fallbackRemote:FireServer("Yes")
+		currentMission = nil
 		waitingForMission = true
+		waitingForRespawn = false
 		missionRequestAt = tick()
 		lastQuestAcceptAt = tick()
 		rogueResetConsumed = false
 		missionResetArmed = true
+		markFarmProgress()
 		return true
 	end
 
@@ -1003,7 +1034,7 @@ local function shouldResetForMissionTitle()
 		return false
 	end
 
-	return true
+	return missionTitle == "rogue shinigami"
 end
 
 local function hasVisibleMissionTitle()
@@ -1260,7 +1291,15 @@ local function runAutoFarm()
 			return
 		end
 
-		if hasVisibleMissionTitle() then
+		local missionTitle = string.lower(getMissionTitle())
+		if tick() - lastQuestAcceptAt >= QUEST_LOAD_GRACE and missionTitle ~= "" then
+			waitingForMission = false
+			markFarmProgress()
+			farmBusy = false
+			return
+		end
+
+		if hasVisibleMissionTitle() and tick() - lastQuestAcceptAt < QUEST_LOAD_GRACE then
 			farmBusy = false
 			return
 		end
@@ -2051,21 +2090,41 @@ function setAutoloadProfile()
 		return
 	end
 
-	writefile(AUTOLOAD_PROFILE_FILE, getRoleFolderName() .. "/" .. getProfileName())
+	local payload = {
+		enabled = autoLoadConfigEnabled,
+		profile = getRoleFolderName() .. "/" .. getProfileName(),
+	}
+
+	writefile(AUTOLOAD_PROFILE_FILE, HttpService:JSONEncode(payload))
 	refreshConfigInfoLabel()
 end
 
 function loadAutoloadProfile()
 	if readfile and isfile and isfile(AUTOLOAD_PROFILE_FILE) then
-		local saved = tostring(readfile(AUTOLOAD_PROFILE_FILE) or "")
-		local savedRole = saved:match("^(win)/") or saved:match("^(lose)/")
-		if savedRole == "win" or savedRole == "lose" then
-			selectedBoostRole = savedRole
-			refreshSelectedRoleLabel()
+		local decoded = decodeJson(readfile(AUTOLOAD_PROFILE_FILE))
+		if type(decoded) == "table" then
+			autoLoadConfigEnabled = decoded.enabled == true
+			updateTickBox(configUI.autoLoadTickBox, autoLoadConfigEnabled)
+
+			local savedProfile = tostring(decoded.profile or "")
+			local savedRole = savedProfile:match("^(win)/") or savedProfile:match("^(lose)/")
+			if savedRole == "win" or savedRole == "lose" then
+				selectedBoostRole = savedRole
+				refreshSelectedRoleLabel()
+			end
+		else
+			local saved = tostring(readfile(AUTOLOAD_PROFILE_FILE) or "")
+			local savedRole = saved:match("^(win)/") or saved:match("^(lose)/")
+			if savedRole == "win" or savedRole == "lose" then
+				selectedBoostRole = savedRole
+				refreshSelectedRoleLabel()
+			end
 		end
 	end
 
-	loadProfile()
+	if autoLoadConfigEnabled then
+		loadProfile()
+	end
 end
 
 function cycleSelectedRole()
@@ -2077,6 +2136,12 @@ function cycleSelectedRole()
 
 	refreshSelectedRoleLabel()
 	refreshConfigInfoLabel()
+end
+
+function toggleAutoLoadConfig()
+	autoLoadConfigEnabled = not autoLoadConfigEnabled
+	updateTickBox(configUI.autoLoadTickBox, autoLoadConfigEnabled)
+	setAutoloadProfile()
 end
 
 function runAutoChooseSlotLoop()
@@ -2211,6 +2276,7 @@ pcall(function()
 	configUI.saveButton.MouseButton1Click:Connect(createConfigProfile)
 	configUI.loadButton.MouseButton1Click:Connect(loadProfile)
 	configUI.autoloadButton.MouseButton1Click:Connect(setAutoloadProfile)
+	configUI.autoLoadTickBox.MouseButton1Click:Connect(toggleAutoLoadConfig)
 
 	hiddenUI.createConfigButton.MouseButton1Click:Connect(createConfigProfile)
 	hiddenUI.createConfigTickBox.MouseButton1Click:Connect(createConfigProfile)
@@ -2232,6 +2298,7 @@ pcall(function()
 	updateTickBox(winUI.killTickBox, autoKillEnabled)
 	updateTickBox(loseUI.leaveTickBox, autoLeaveEnabled)
 	updateTickBox(farmUI.antiAfkTickBox, antiAfkEnabled)
+	updateTickBox(configUI.autoLoadTickBox, autoLoadConfigEnabled)
 	refreshSelectedRoleLabel()
 	farmUI.resetCharacterTickBox.Text = "USE"
 	farmUI.resetCharacterTickBox.BackgroundColor3 = theme.input
