@@ -529,6 +529,7 @@ local FARM_STUCK_TIMEOUT = 6
 local FARM_TARGET_TIMEOUT = 10
 local AUTO_FARM_RESTART_COOLDOWN = 3
 local MEDITATE_REQUEST_COOLDOWN = 2
+local MEDITATE_SAFE_SPOT = Vector3.new(932, 152, 2244)
 local HOLLOW_SPAWN_PADDING = Vector3.new(100, 60, 100)
 local HOLLOW_SPAWN_RADIUS_PADDING = 140
 local PROFILE_ROOT_FOLDER = "cocacola"
@@ -2045,6 +2046,7 @@ function toggleAntiAfk()
 end
 
 lastMeditateRequestAt = 0
+innerWorldNpcKey = ""
 
 function isMeditating()
 	local character = player.Character
@@ -2067,16 +2069,161 @@ function isMeditating()
 	return false
 end
 
+function getInnerWorldRegion()
+	local innerWorldPlots = Workspace:FindFirstChild("InnerWorldPlots")
+	local character = player.Character
+	if not innerWorldPlots or not character then
+		return nil
+	end
+
+	local plot = innerWorldPlots:FindFirstChild(character.Name .. "InnerWorld")
+	return plot and plot:FindFirstChild("InnerWorldRegion") or nil
+end
+
+function isPointInsideRegion(regionPart, worldPosition)
+	if not regionPart or not worldPosition then
+		return false
+	end
+
+	local localPosition = regionPart.CFrame:PointToObjectSpace(worldPosition)
+	local halfSize = regionPart.Size * 0.5
+	return math.abs(localPosition.X) <= halfSize.X
+		and math.abs(localPosition.Y) <= halfSize.Y
+		and math.abs(localPosition.Z) <= halfSize.Z
+end
+
+function isInInnerWorld()
+	local region = getInnerWorldRegion()
+	local hrp = player.Character and player.Character:FindFirstChild("HumanoidRootPart")
+	return region and hrp and isPointInsideRegion(region, hrp.Position) or false
+end
+
+function getDialogueRemoteSnapshot()
+	local snapshot = {}
+
+	for _, child in ipairs(player:GetChildren()) do
+		if child:IsA("RemoteEvent") then
+			snapshot[child] = true
+		end
+	end
+
+	return snapshot
+end
+
+function findNewDialogueRemote(beforeSnapshot, timeout)
+	local startedAt = tick()
+
+	while tick() - startedAt < timeout do
+		for _, child in ipairs(player:GetChildren()) do
+			if child:IsA("RemoteEvent") and not beforeSnapshot[child] then
+				return child
+			end
+		end
+		task.wait(0.05)
+	end
+
+	return nil
+end
+
+function findNearestShikaiNpc()
+	local entitiesFolder = Workspace:FindFirstChild("Entities")
+	local region = getInnerWorldRegion()
+	local hrp = player.Character and player.Character:FindFirstChild("HumanoidRootPart")
+	if not entitiesFolder or not region or not hrp then
+		return nil, nil
+	end
+
+	local nearestNpc
+	local nearestRoot
+	local nearestDistance = math.huge
+
+	for _, entity in ipairs(entitiesFolder:GetChildren()) do
+		if entity:IsA("Model") and entity.Name:match("^ShikaiNPC_") then
+			local root = entity:FindFirstChild("HumanoidRootPart")
+			local humanoid = entity:FindFirstChildWhichIsA("Humanoid")
+
+			if root and humanoid and humanoid.Health > 0 and isPointInsideRegion(region, root.Position) then
+				local distance = (hrp.Position - root.Position).Magnitude
+				if distance < nearestDistance then
+					nearestDistance = distance
+					nearestNpc = entity
+					nearestRoot = root
+				end
+			end
+		end
+	end
+
+	return nearestNpc, nearestRoot
+end
+
+function talkToShikaiNpc(npc, root)
+	if not npc or not root or innerWorldNpcKey == npc.Name then
+		return
+	end
+
+	local clickDetector = root:FindFirstChild("ClickDetector") or root:FindFirstChildWhichIsA("ClickDetector", true)
+	if not clickDetector then
+		return
+	end
+
+	for _ = 1, 5 do
+		local beforeSnapshot = getDialogueRemoteSnapshot()
+		fireclickdetector(clickDetector)
+		task.wait(0.2)
+
+		local dialogueRemote = findNewDialogueRemote(beforeSnapshot, 1.5)
+		if dialogueRemote then
+			dialogueRemote:FireServer("Yes")
+			task.wait(0.08)
+		end
+	end
+
+	innerWorldNpcKey = npc.Name
+end
+
+function gripShikaiNpc()
+	local character = getCharacter()
+	local handler = character:FindFirstChild("CharacterHandler")
+	local remotes = handler and handler:FindFirstChild("Remotes")
+	local executeRemote = remotes and remotes:FindFirstChild("Execute")
+
+	if executeRemote then
+		executeRemote:FireServer()
+	end
+end
+
 function runAutoMeditateLoop()
 	task.spawn(function()
 		while autoMeditateEnabled and isCurrentSession() do
-			if not isMeditating() and tick() - lastMeditateRequestAt >= MEDITATE_REQUEST_COOLDOWN then
+			if isInInnerWorld() then
+				local npc, root = findNearestShikaiNpc()
+				local humanoid = npc and npc:FindFirstChildWhichIsA("Humanoid")
+
+				if npc and root then
+					playTween(getHRP(), getBehindMobPosition(root), 120, root.Position)
+					talkToShikaiNpc(npc, root)
+
+					if humanoid and humanoid.Health > 0 then
+						local combatRemote = ReplicatedStorage:FindFirstChild("Remotes")
+							and ReplicatedStorage.Remotes:FindFirstChild("ServerCombatHandler")
+						if combatRemote then
+							combatRemote:FireServer("LightAttack")
+						end
+					elseif humanoid and humanoid.Health <= 0 then
+						gripShikaiNpc()
+						innerWorldNpcKey = ""
+					end
+				else
+					innerWorldNpcKey = ""
+				end
+			elseif not isMeditating() and tick() - lastMeditateRequestAt >= MEDITATE_REQUEST_COOLDOWN then
 				local character = getCharacter()
 				local handler = character:FindFirstChild("CharacterHandler")
 				local remotes = handler and handler:FindFirstChild("Remotes")
 				local meditateRemote = remotes and remotes:FindFirstChild("Meditate")
 
 				if meditateRemote then
+					playTween(getHRP(), MEDITATE_SAFE_SPOT, 120)
 					lastMeditateRequestAt = tick()
 					meditateRemote:FireServer()
 				end
@@ -2093,6 +2240,7 @@ function toggleAutoMeditate()
 
 	if autoMeditateEnabled then
 		lastMeditateRequestAt = 0
+		innerWorldNpcKey = ""
 		runAutoMeditateLoop()
 	end
 end
