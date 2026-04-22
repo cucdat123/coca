@@ -1192,6 +1192,14 @@ local function markFarmProgress()
 	lastFarmProgressAt = tick()
 end
 
+local function enterRespawnRecovery()
+	currentMission = nil
+	waitingForMission = false
+	waitingForRespawn = true
+	farmBusy = false
+	stopCurrentTween()
+end
+
 local function runAutoFarm()
 	if farmBusy and tick() - lastFarmRunAt > 8 then
 		farmBusy = false
@@ -1203,6 +1211,13 @@ local function runAutoFarm()
 
 	farmBusy = true
 	lastFarmRunAt = tick()
+
+	local currentCharacter = player.Character
+	local currentHumanoid = currentCharacter and currentCharacter:FindFirstChildWhichIsA("Humanoid")
+	if not currentHumanoid or currentHumanoid.Health <= 0 then
+		enterRespawnRecovery()
+		return
+	end
 
 	if shouldResetForMissionTitle() and not rogueResetConsumed and tick() - lastResetAt >= RESET_COOLDOWN then
 		currentMission = nil
@@ -1232,7 +1247,10 @@ local function runAutoFarm()
 		if humanoid and humanoid.Health > 0 then
 			waitingForRespawn = false
 			missionResetArmed = false
+			currentMission = nil
+			waitingForMission = false
 			missionRequestAt = 0
+			markFarmProgress()
 		else
 			farmBusy = false
 			return
@@ -2360,5 +2378,18 @@ UserInputService.InputBegan:Connect(function(input, gameProcessed)
 
 	if input.KeyCode == Enum.KeyCode.End then
 		screenGui.Enabled = not screenGui.Enabled
+	end
+end)
+
+player.CharacterAdded:Connect(function(character)
+	currentMission = nil
+	waitingForMission = false
+	waitingForRespawn = false
+	farmBusy = false
+	stopCurrentTween()
+
+	local humanoid = character:FindFirstChildWhichIsA("Humanoid") or character:WaitForChild("Humanoid", 5)
+	if humanoid and humanoid.Health > 0 then
+		markFarmProgress()
 	end
 end)
